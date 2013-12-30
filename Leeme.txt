@@ -1,0 +1,2 @@
+En este ejemplo se conectan dos host y se envian tramas solo con ceros, del tamaño dado por el usuario.
+No hay tratamiento de errores.
