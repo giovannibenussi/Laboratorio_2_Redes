@@ -1,0 +1,67 @@
+----------------------------------------------------------------------
+
+
+Tcl error: tkutil.cc#273: missing close-brace
+    while executing
+".main.text insert end {Copie: 0Copie: 0Copie: 9Copie: 0Copie:  {log}"
+
+
+Tcl error: tkutil.cc#273: missing close-brace
+    while executing
+".main.text insert end {Copie: 0Copie: 0Copie: 9Copie: 0Copie:  {log}"
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: tkutil.cc#271: missing close-brace
+    while executing
+".main.text insert end {Copie: "
+
+
+Tcl error: tkutil.cc#271: missing close-brace
+    while executing
+".main.text insert end {Copie: "
+
+
+Tcl error: tkutil.cc#271: missing close-brace
+    while executing
+".main.text insert end {Copie: "
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: tkutil.cc#271: missing close-brace
+    while executing
+".main.text insert end {_Copie: "
+
+
+Tcl error: tkutil.cc#271: missing close-brace
+    while executing
+".main.text insert end {_Copie: "
+
+
+Tcl error: tkutil.cc#271: missing close-brace
+    while executing
+".main.text insert end {_Copie: "
+
+
+----------------------------------------------------------------------
+
+
+Tcl error: tkutil.cc#271: missing close-brace
+    while executing
+".main.text insert end {_Copie: "
+
+
+Tcl error: tkutil.cc#271: missing close-brace
+    while executing
+".main.text insert end {_Copie: "
+
+
+Tcl error: tkutil.cc#271: missing close-brace
+    while executing
+".main.text insert end {_Copie: "
+
+
