@@ -7,6 +7,7 @@
 
 #include <string.h>
 #include <omnetpp.h>
+#include <vector>
 
 #define ANADIR_AL_INICIO         0
 #define ANADIR_AL_FINAL          1
@@ -49,9 +50,12 @@
 #define COLOR_TRAMA COLOR_BLACK
 #define COLOR_MENSAJE COLOR_RED
 
+using namespace std;
+
 class enlace : public cSimpleModule
 {
   protected:
+        vector<cMessage*> mensajes;
             virtual void processMsgFromHigherLayer(cMessage *dato);
             virtual void processMsgFromLowerLayer(cMessage *packet);
             virtual void handleMessage(cMessage *msg);
@@ -62,6 +66,7 @@ class enlace : public cSimpleModule
             virtual bool EsToken(cMessage * msg);
             bool PoseeTrama = false;
             bool EnvieToken = false;
+            bool MensajeEnCamino = false;
 };
 
 Define_Module( enlace );
@@ -183,7 +188,15 @@ void enlace::processMsgFromHigherLayer(cMessage *dato)
     // int limite_de_tramas = par("limite_de_tramas");
 
     ev << "__Mensaje: " << dato->getFullName() << endl;
-    send(dato,"hacia_fisico");
+
+    mensajes.push_back(dato);
+
+    ev << "Mensajes: " << endl;
+    for(int i = 0; i < mensajes.size(); i++)
+        ev << "\t" << (mensajes.at(i))->getFullName() << endl;
+    if(!MensajeEnCamino && mensajes.size() > 0)
+        send(mensajes.at(mensajes.size() - 1),"hacia_fisico");
+    MensajeEnCamino = true;
 }
 
 //lo que se hace cuando llega una palabra de codigo desde otro host
@@ -202,8 +215,14 @@ void enlace::processMsgFromLowerLayer(cMessage *packet)
 
     }else if(ObtenerIntDeTrama(packet, INICIO_DIRECCION_ORIGEN, LARGO_DIRECCION_ORIGEN) == direccion){
         // si yo lo envie previamente
+        MensajeEnCamino = false;
         ev << "se me devolvio !!!" << endl;
-        send(packet, "hacia_arriba");
+        if(mensajes.size() > 0){
+            MensajeEnCamino = true;
+            mensajes.pop_back();
+            if(mensajes.size() > 0)
+                send(mensajes.at(mensajes.size() - 1),"hacia_fisico");
+        }
     }
     else{
         ev << "No es mio, reenvio..." << endl;

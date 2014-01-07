@@ -32,10 +32,11 @@ Define_Module(aplicacion);
 
 void aplicacion::initialize()
 {
-    cantidad_de_mensajes = 2;
+    cantidad_de_mensajes = 10;
 	if(turno==0)
 	{
-	    generaPalabraInfo();
+	    for(int i = 0; i < cantidad_de_mensajes; i++)
+	        generaPalabraInfo();
 		turno=1;
 	}
 }
@@ -47,8 +48,6 @@ void aplicacion::handleMessage(cMessage *msg)
 		delete msg;//cuando llega un mensaje solo se descarta
 	}
 	//se genera un mensaje simulando respuesta
-	if(cantidad_de_mensajes > 0)
-	    generaPalabraInfo();
 }
 
 int LargoInt(int value){
@@ -86,7 +85,6 @@ const char * aplicacion::AplicacionIntToConstChar(int numero, int largo){
 
 void aplicacion::generaPalabraInfo()
 {
-    cantidad_de_mensajes--;
 	int direccion = par("direccion");
 	int tamT = 4;
 	char *mens;
