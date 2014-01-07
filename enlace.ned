@@ -1,7 +1,8 @@
 simple enlace
     parameters:
         direccion: numeric const,
-        tamTrama: numeric const;
+        limite_de_tramas: numeric const,
+        direccion_de_envio: numeric const;
     gates:
         in: desde_fisico;
         out: hacia_fisico;

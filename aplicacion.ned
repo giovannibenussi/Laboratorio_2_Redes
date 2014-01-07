@@ -1,7 +1,7 @@
 simple aplicacion
     parameters:
-       	tamTrama : numeric const,
-	direccion : numeric const;
+       	direccion_de_envio: numeric const,
+		direccion : numeric const;
     gates:
         in: desde_abajo;
         out: hacia_abajo;

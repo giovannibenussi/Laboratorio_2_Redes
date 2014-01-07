@@ -8,26 +8,34 @@
 #include <omnetpp.h>
 #include <cstdlib>
 #include <iostream>
+
+#define ANADIR_AL_INICIO         0
+#define ANADIR_AL_FINAL          1
+
 using namespace std;
 
 class aplicacion : public cSimpleModule
 {
   public:
+    int cantidad_de_mensajes;
     virtual void initialize();
     virtual void handleMessage(cMessage *msg);
     virtual void generaPalabraInfo();
+    virtual cMessage * AnadirMensajeACMessage(cMessage * msg, char * mensaje, int posicion);
+    virtual const char * AplicacionIntToConstChar(int numero, int largo);
 };
 
-//se usa para que sÃ²lo uno de los host comience la comunicacion
+//se usa para que sólo uno de los host comience la comunicacion
 int turno=0;
 
 Define_Module(aplicacion);
 
 void aplicacion::initialize()
 {
+    cantidad_de_mensajes = 2;
 	if(turno==0)
 	{
-		generaPalabraInfo();
+	    generaPalabraInfo();
 		turno=1;
 	}
 }
@@ -39,13 +47,48 @@ void aplicacion::handleMessage(cMessage *msg)
 		delete msg;//cuando llega un mensaje solo se descarta
 	}
 	//se genera un mensaje simulando respuesta
-	generaPalabraInfo();
+	if(cantidad_de_mensajes > 0)
+	    generaPalabraInfo();
+}
+
+int LargoInt(int value){
+  int l=1;
+  while(value>9){ l++; value/=10; }
+  return l;
+}
+
+cMessage * aplicacion::AnadirMensajeACMessage(cMessage * msg, char * mensaje, int posicion){
+    const char * a_mensaje_anterior = msg->getFullName();
+    int largo_total = 1 + strlen(a_mensaje_anterior) + strlen(mensaje);
+    char * mensaje_nuevo = (char*) malloc(sizeof(char)*largo_total);
+    if(posicion == ANADIR_AL_FINAL){
+        strcpy(mensaje_nuevo, a_mensaje_anterior);
+        strcat(mensaje_nuevo, mensaje);
+    }else{
+        strcpy(mensaje_nuevo, mensaje);
+        strcat(mensaje_nuevo, a_mensaje_anterior);
+    }
+    cMessage * nuevo = new cMessage(mensaje_nuevo);
+    return nuevo;
+}
+
+const char * aplicacion::AplicacionIntToConstChar(int numero, int largo){
+    stringstream ss("");
+    for(int i = 0; i < largo - LargoInt(largo); i++)
+        ss << '0';
+    if(numero == 0)
+        ss << '0';
+    else
+        ss << numero;
+    string salida = ss.str();
+    return salida.c_str();
 }
 
 void aplicacion::generaPalabraInfo()
 {
+    cantidad_de_mensajes--;
 	int direccion = par("direccion");
-	int tamT = par("tamTrama");
+	int tamT = 4;
 	char *mens;
 
 	mens = (char*)malloc(sizeof(char)*tamT);
@@ -56,8 +99,14 @@ void aplicacion::generaPalabraInfo()
 		strcat(mens, "0");
 	
         cMessage *palabra = new cMessage(mens);
-        send(palabra, "hacia_abajo");//se envia la palabra hacia abajo
 
-	ev<<"Host "<<direccion<<" - LA PALABRA QUE SE ENVIO DESDE APLICACION ES: "<<mens;
+
+    // Añadimos la direccion de envio
+    int direccion_de_envio = (direccion + 2) % 4;
+    palabra = AnadirMensajeACMessage(palabra, (char*)AplicacionIntToConstChar(direccion, 2), ANADIR_AL_INICIO);
+    palabra = AnadirMensajeACMessage(palabra, (char*)AplicacionIntToConstChar(direccion_de_envio, 2), ANADIR_AL_INICIO);
+	ev<<"Host "<<direccion<<" - LA PALABRA QUE SE ENVIO DESDE APLICACION ES: "<<palabra->getFullName();
+
+	send(palabra, "hacia_abajo");//se envia la palabra hacia abajo
 }
 

@@ -6,7 +6,7 @@ import
 module host
     parameters:
         direccion: numeric const,
-        tamTrama: numeric const;
+        direccion_de_envio: numeric const;
 
     gates:
         in: entrada;
@@ -16,16 +16,19 @@ module host
 
         varAplicacion: aplicacion;
             parameters:
-                tamTrama = tamTrama,
+                direccion_de_envio = direccion_de_envio,                
                 direccion = direccion;
 
             display: "p=98,44;i=abstract/penguin";
+            
         varIntermedio: intermedio;
-
-            display: "p=98,152;i=abstract/switch";
+        	parameters:
+	            display: "p=98,152;i=abstract/switch";
+	            
         varEnlace: enlace;
             parameters:
-                tamTrama = tamTrama,
+                limite_de_tramas = 3,
+                direccion_de_envio = direccion_de_envio,
                 direccion = direccion;
 
             display: "p=97,245;i=block/plug";
