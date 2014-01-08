@@ -47,8 +47,9 @@
 #define COLOR_CYAN    5
 #define COLOR_MAGENTA 6
 #define COLOR_BLACK   7
-#define COLOR_TRAMA COLOR_BLACK
-#define COLOR_MENSAJE COLOR_RED
+#define COLOR_TRAMA               COLOR_BLACK
+#define COLOR_MENSAJE_NO_RECIBIDO COLOR_YELLOW
+#define COLOR_MENSAJE_RECIBIDO    COLOR_GREEN
 
 using namespace std;
 
@@ -63,7 +64,11 @@ class enlace : public cSimpleModule
             virtual cMessage * AnadirMensajeACMessageI(cMessage * msg, char * mensaje, int posicion);
             virtual char * ObtenerMensaje(cMessage * msg, int inicio, int largo);
             virtual char * ObtenerMensajeCharPointer(char * msg, int inicio, int largo);
-            virtual bool EsToken(cMessage * msg);
+            bool EsParaMi(cMessage * packet, int direccion);
+            bool LoEnvieYo(cMessage * packet, int direccion);
+            bool EsToken(cMessage * msg);
+            bool HayMensajes();
+            bool EnviarMensaje();
             bool PoseeTrama = false;
             bool EnvieToken = false;
             bool MensajeEnCamino = false;
@@ -159,6 +164,18 @@ void enlace::handleMessage(cMessage *msg)
     else processMsgFromHigherLayer(msg);//sino es que llega desde arriba
 }
 
+bool enlace::HayMensajes(){
+    return mensajes.size() > 0;
+}
+
+bool enlace::EsParaMi(cMessage * packet, int direccion){
+    return ObtenerIntDeTrama(packet, INICIO_DIRECCION_DESTINO, LARGO_DIRECCION_DESTINO) == direccion;
+}
+
+bool enlace::LoEnvieYo(cMessage * packet, int direccion){
+    return ObtenerIntDeTrama(packet, INICIO_DIRECCION_ORIGEN, LARGO_DIRECCION_ORIGEN) == direccion;
+}
+
 bool enlace::EsToken(cMessage * msg){
     if(ObtenerMensaje(msg, INICIO_CONTROL_ACCESO, LARGO_CONTROL_ACCESO) == CONTROL_ACCESO_TOKEN)
         return true;
@@ -182,7 +199,7 @@ void enlace::processMsgFromHigherLayer(cMessage *dato)
         EnvieToken = true;
         dato->setKind(COLOR_TRAMA);
     }else {
-       dato->setKind(COLOR_MENSAJE);
+       dato->setKind(COLOR_MENSAJE_NO_RECIBIDO);
     }
 
     // int limite_de_tramas = par("limite_de_tramas");
@@ -194,9 +211,23 @@ void enlace::processMsgFromHigherLayer(cMessage *dato)
     ev << "Mensajes: " << endl;
     for(int i = 0; i < mensajes.size(); i++)
         ev << "\t" << (mensajes.at(i))->getFullName() << endl;
-    if(!MensajeEnCamino && mensajes.size() > 0)
-        send(mensajes.at(mensajes.size() - 1),"hacia_fisico");
-    MensajeEnCamino = true;
+
+    EnviarMensaje();
+}
+
+// Intenta enviar un mensaje, si no hay mensajes que enviar, devuelve false
+bool enlace::EnviarMensaje(){
+    if(mensajes.size() > 0 && !MensajeEnCamino){
+        int ultimo_elemento = mensajes.size() - 1;
+        cMessage * ultimo_mensaje = mensajes.at( ultimo_elemento );
+        ultimo_mensaje->setKind(COLOR_MENSAJE_NO_RECIBIDO);
+        MensajeEnCamino = true;
+        mensajes.pop_back();
+        send( ultimo_mensaje ,"hacia_fisico");
+        ev << "Enviando Mensaje: " << ultimo_mensaje->getFullName()  << endl;
+        return true;
+    }
+    return false;
 }
 
 //lo que se hace cuando llega una palabra de codigo desde otro host
@@ -204,25 +235,22 @@ void enlace::processMsgFromLowerLayer(cMessage *packet)
 {
     int direccion = par("direccion");
     ev << direccion << " == " << ObtenerIntDeTrama(packet, INICIO_DIRECCION_DESTINO, LARGO_DIRECCION_DESTINO) << endl;
-    if(ObtenerIntDeTrama(packet, INICIO_DIRECCION_DESTINO, LARGO_DIRECCION_DESTINO) == direccion){
+    if(EsParaMi(packet, direccion)){
         ev << "Es para mi !!!! :D" << endl;
 
         // Modifico el bit del mensaje...
 
         //mensajes_enviados++;
         ev << "Reenvio y modifico" << endl;
+        packet->setKind(COLOR_MENSAJE_RECIBIDO);
         send(packet, "hacia_fisico");
 
-    }else if(ObtenerIntDeTrama(packet, INICIO_DIRECCION_ORIGEN, LARGO_DIRECCION_ORIGEN) == direccion){
+    }else if(LoEnvieYo(packet, direccion)){
         // si yo lo envie previamente
         MensajeEnCamino = false;
+
         ev << "se me devolvio !!!" << endl;
-        if(mensajes.size() > 0){
-            MensajeEnCamino = true;
-            mensajes.pop_back();
-            if(mensajes.size() > 0)
-                send(mensajes.at(mensajes.size() - 1),"hacia_fisico");
-        }
+        EnviarMensaje();
     }
     else{
         ev << "No es mio, reenvio..." << endl;

@@ -1,2 +1,3 @@
 # Partial Tkenv config file -- see $HOME/.tkenvrc as well
+inspector "red" "red" "2" "565x342+183+173:normal"
 
