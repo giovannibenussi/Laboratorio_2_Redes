@@ -47,7 +47,7 @@
 #define COLOR_CYAN    5
 #define COLOR_MAGENTA 6
 #define COLOR_BLACK   7
-#define COLOR_TRAMA               COLOR_BLACK
+#define COLOR_TOKEN               COLOR_BLACK
 #define COLOR_MENSAJE_NO_RECIBIDO COLOR_YELLOW
 #define COLOR_MENSAJE_RECIBIDO    COLOR_GREEN
 
@@ -55,8 +55,12 @@ using namespace std;
 
 class enlace : public cSimpleModule
 {
+    public:
+        int limite_de_mensajes = 1;
+        int mensajes_enviados  = 0;
   protected:
         vector<cMessage*> mensajes;
+            virtual void initialize();
             virtual void processMsgFromHigherLayer(cMessage *dato);
             virtual void processMsgFromLowerLayer(cMessage *packet);
             virtual void handleMessage(cMessage *msg);
@@ -69,12 +73,20 @@ class enlace : public cSimpleModule
             bool EsToken(cMessage * msg);
             bool HayMensajes();
             bool EnviarMensaje();
-            bool PoseeTrama = false;
-            bool EnvieToken = false;
+            bool EnviarToken();
+            void VerEstadisticas();
+            bool PoseeTrama      = false;
+            bool EnvieToken      = false;
+            bool TengoElToken    = false;
             bool MensajeEnCamino = false;
 };
 
 Define_Module( enlace );
+
+void enlace::initialize(){
+    int direccion = par("direccion");
+    TengoElToken = direccion == 0 ? true : false;
+}
 
 char * enlace::ObtenerMensaje(cMessage * msg, int inicio, int largo){
     char * mensaje                = (char*) malloc( sizeof(char) * (largo + 1));
@@ -177,7 +189,7 @@ bool enlace::LoEnvieYo(cMessage * packet, int direccion){
 }
 
 bool enlace::EsToken(cMessage * msg){
-    if(ObtenerMensaje(msg, INICIO_CONTROL_ACCESO, LARGO_CONTROL_ACCESO) == CONTROL_ACCESO_TOKEN)
+    if(strcmp(ObtenerMensaje(msg, INICIO_CONTROL_ACCESO, LARGO_CONTROL_ACCESO), CONTROL_ACCESO_TOKEN) == 0)
         return true;
     return false;
 }
@@ -195,29 +207,46 @@ void enlace::processMsgFromHigherLayer(cMessage *dato)
     dato = AnadirMensajeACMessage(dato, CONTROL_ACCESO_TRAMA, ANADIR_AL_INICIO);
     // si soy el host 0 y no se ha enviado nunca el token, comienzo a enviarlo
 
-    if( direccion == 0 && !EnvieToken){
-        EnvieToken = true;
-        dato->setKind(COLOR_TRAMA);
-    }else {
-       dato->setKind(COLOR_MENSAJE_NO_RECIBIDO);
-    }
-
     // int limite_de_tramas = par("limite_de_tramas");
 
     ev << "__Mensaje: " << dato->getFullName() << endl;
 
     mensajes.push_back(dato);
 
-    ev << "Mensajes: " << endl;
-    for(int i = 0; i < mensajes.size(); i++)
-        ev << "\t" << (mensajes.at(i))->getFullName() << endl;
+    if(!MensajeEnCamino){
+        // si llegue al limite de mensajes, envio el token
+        if(mensajes_enviados == limite_de_mensajes){
+            ev << "_____________________________" << endl;
+            mensajes_enviados = 0;
+            EnvieToken = true;
+            EnviarToken();
+        }else{
+            EnviarMensaje();
+        }
+    }
+}
 
-    EnviarMensaje();
+bool enlace::EnviarToken(){
+    if(TengoElToken){
+        EnvieToken = true;
+        TengoElToken = false;
+        ev << "Enviare el token" << endl;
+        cMessage * token = new cMessage(CONTROL_ACCESO_TOKEN);
+        token->setKind(COLOR_TOKEN);
+        send(token, "hacia_fisico");
+        return true;
+    }
+    return false;
 }
 
 // Intenta enviar un mensaje, si no hay mensajes que enviar, devuelve false
 bool enlace::EnviarMensaje(){
-    if(mensajes.size() > 0 && !MensajeEnCamino){
+    if(mensajes.size() == 0){
+        cMessage * paquete = new cMessage("");
+        send(paquete, "hacia_arriba");
+        return false;
+    }
+    if(mensajes.size() > 0 && !MensajeEnCamino && TengoElToken){
         int ultimo_elemento = mensajes.size() - 1;
         cMessage * ultimo_mensaje = mensajes.at( ultimo_elemento );
         ultimo_mensaje->setKind(COLOR_MENSAJE_NO_RECIBIDO);
@@ -225,36 +254,67 @@ bool enlace::EnviarMensaje(){
         mensajes.pop_back();
         send( ultimo_mensaje ,"hacia_fisico");
         ev << "Enviando Mensaje: " << ultimo_mensaje->getFullName()  << endl;
+        this->mensajes_enviados++;
+        VerEstadisticas();
         return true;
     }
     return false;
 }
 
+void enlace::VerEstadisticas(){
+    ev << "Mensajes Enviados : " << mensajes_enviados << endl;
+    ev << "Limite de Mensajes: " << limite_de_mensajes << endl;
+}
+
 //lo que se hace cuando llega una palabra de codigo desde otro host
 void enlace::processMsgFromLowerLayer(cMessage *packet)
 {
-    int direccion = par("direccion");
-    ev << direccion << " == " << ObtenerIntDeTrama(packet, INICIO_DIRECCION_DESTINO, LARGO_DIRECCION_DESTINO) << endl;
-    if(EsParaMi(packet, direccion)){
-        ev << "Es para mi !!!! :D" << endl;
+    MensajeEnCamino = false;
+    if(EsToken(packet)){
+        ev << "Es el token !!!" << mensajes.size() << endl;
+        TengoElToken = true;
+        mensajes_enviados = 0;
+        if(EnviarMensaje()){
+            ev << "Enviare nuevos mensajes" << endl;
+        }else{
+            ev << "No tengo mensajes, reenviare" << endl;
+            TengoElToken = false;
+            send(packet, "hacia_fisico");
+        }
+    }else{
+        ev << "NO" << endl;
+        int direccion = par("direccion");
+        ev << direccion << " == " << ObtenerIntDeTrama(packet, INICIO_DIRECCION_DESTINO, LARGO_DIRECCION_DESTINO) << endl;
+        if(EsParaMi(packet, direccion)){
+            ev << "Es para mi !!!! :D" << endl;
 
-        // Modifico el bit del mensaje...
+            // Modifico el bit del mensaje...
 
-        //mensajes_enviados++;
-        ev << "Reenvio y modifico" << endl;
-        packet->setKind(COLOR_MENSAJE_RECIBIDO);
-        send(packet, "hacia_fisico");
+            //mensajes_enviados++;
+            ev << "Reenvio y modifico" << endl;
+            packet->setKind(COLOR_MENSAJE_RECIBIDO);
+            send(packet, "hacia_fisico");
 
-    }else if(LoEnvieYo(packet, direccion)){
-        // si yo lo envie previamente
-        MensajeEnCamino = false;
+        }else if(LoEnvieYo(packet, direccion)){
+            // si yo lo envie previamente
+            ev << "se me devolvio !!!" << endl;
 
-        ev << "se me devolvio !!!" << endl;
-        EnviarMensaje();
-    }
-    else{
-        ev << "No es mio, reenvio..." << endl;
-        send(packet, "hacia_fisico");
+            VerEstadisticas();
+            ev << mensajes_enviados << " == " << limite_de_mensajes << endl;
+            // si llegue al limite de mensajes, envio el token
+            if(mensajes_enviados == limite_de_mensajes){
+                ev << "ACAAAAAA" << endl;
+                mensajes_enviados = 0;
+                EnviarToken();
+            }else{
+                ev << "CHAOOOOO" << endl;
+                EnviarMensaje();
+            }
+        }
+        else{
+            ev << "No es mio, reenvio..." << endl;
+            send(packet, "hacia_fisico");
 
+        }
     }
 }

@@ -33,12 +33,9 @@ Define_Module(aplicacion);
 void aplicacion::initialize()
 {
     cantidad_de_mensajes = 2;
-	if(turno==0)
-	{
-	    for(int i = 0; i < cantidad_de_mensajes; i++)
-	        generaPalabraInfo();
-		turno=1;
-	}
+    for(int i = 0; i < cantidad_de_mensajes; i++)
+        generaPalabraInfo();
+    turno=1;
 }
 
 void aplicacion::handleMessage(cMessage *msg)
