@@ -32,7 +32,7 @@ Define_Module(aplicacion);
 
 void aplicacion::initialize()
 {
-    cantidad_de_mensajes = 2;
+    cantidad_de_mensajes = 5;
     for(int i = 0; i < cantidad_de_mensajes; i++)
         generaPalabraInfo();
     turno=1;
