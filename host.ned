@@ -5,6 +5,7 @@ import
 
 module host
     parameters:
+        cantidad_de_mensajes: numeric const,
         direccion: numeric const,
         direccion_de_envio: numeric const;
 
@@ -16,7 +17,8 @@ module host
 
         varAplicacion: aplicacion;
             parameters:
-                direccion_de_envio = direccion_de_envio,                
+                direccion_de_envio = direccion_de_envio,
+                cantidad_de_mensajes = cantidad_de_mensajes,                
                 direccion = direccion;
 
             display: "p=98,44;i=abstract/penguin";

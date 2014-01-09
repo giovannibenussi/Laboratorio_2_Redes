@@ -20,22 +20,25 @@ class aplicacion : public cSimpleModule
     int cantidad_de_mensajes;
     virtual void initialize();
     virtual void handleMessage(cMessage *msg);
-    virtual void generaPalabraInfo();
+    virtual void generaPalabraInfo(int direccion_de_envio);
     virtual cMessage * AnadirMensajeACMessage(cMessage * msg, char * mensaje, int posicion);
     virtual const char * AplicacionIntToConstChar(int numero, int largo);
 };
 
-//se usa para que sólo uno de los host comience la comunicacion
-int turno=0;
 
 Define_Module(aplicacion);
 
 void aplicacion::initialize()
 {
-    cantidad_de_mensajes = 5;
-    for(int i = 0; i < cantidad_de_mensajes; i++)
-        generaPalabraInfo();
-    turno=1;
+    int direccion = par("direccion");
+    int n_mensajes = par("cantidad_de_mensajes");
+    for(int destino = 0; destino < 4; destino++){
+        cantidad_de_mensajes = n_mensajes;
+        if(destino != direccion){
+            for(int i = 0; i < cantidad_de_mensajes; i++)
+                generaPalabraInfo(destino);
+        }
+    }
 }
 
 void aplicacion::handleMessage(cMessage *msg)
@@ -80,7 +83,7 @@ const char * aplicacion::AplicacionIntToConstChar(int numero, int largo){
     return salida.c_str();
 }
 
-void aplicacion::generaPalabraInfo()
+void aplicacion::generaPalabraInfo(int direccion_de_envio)
 {
 	int direccion = par("direccion");
 	int tamT = 4;
@@ -97,10 +100,10 @@ void aplicacion::generaPalabraInfo()
 
 
     // Añadimos la direccion de envio
-    int direccion_de_envio = (direccion + 2) % 4;
+    ev << "Host: " << direccion << ": Enviare la palabra " << palabra->getFullName() << " a " << direccion_de_envio << endl;
     palabra = AnadirMensajeACMessage(palabra, (char*)AplicacionIntToConstChar(direccion, 2), ANADIR_AL_INICIO);
     palabra = AnadirMensajeACMessage(palabra, (char*)AplicacionIntToConstChar(direccion_de_envio, 2), ANADIR_AL_INICIO);
-	ev<<"Host "<<direccion<<" - LA PALABRA QUE SE ENVIO DESDE APLICACION ES: "<<palabra->getFullName();
+	//ev<<"Host "<<direccion<<" - LA PALABRA QUE SE ENVIO DESDE APLICACION ES: "<<palabra->getFullName() << endl;
 
 	send(palabra, "hacia_abajo");//se envia la palabra hacia abajo
 }

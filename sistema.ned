@@ -2,11 +2,14 @@ import
     "host";
 
 module sistema
+	parameters:
+	    cantidad_de_mensajes: numeric;
     submodules:
 
         Host_0: host;
             parameters:
                 direccion = 0,
+                cantidad_de_mensajes = cantidad_de_mensajes,
                 direccion_de_envio = 1;
                 
 
@@ -14,18 +17,21 @@ module sistema
         Host_1: host;
             parameters:
                 direccion = 1,
+                cantidad_de_mensajes = cantidad_de_mensajes,
                 direccion_de_envio = 2;
 
             display: "p=71,179;i=old/server1";
         Host_2: host;
             parameters:
                 direccion = 2,
+                cantidad_de_mensajes = cantidad_de_mensajes,
                 direccion_de_envio = 3;
 
             display: "p=190,179;i=old/server1";
         Host_3: host;
             parameters:
                 direccion = 3,
+                cantidad_de_mensajes = cantidad_de_mensajes,
                 direccion_de_envio = 0;
 
             display: "p=190,79;i=old/server1";
@@ -48,6 +54,7 @@ endchannel
 
 //INSTANCIACION DE LA RED
 network red : sistema
-    
+	parameters:
+        cantidad_de_mensajes = input(2, "Ingrese la cantidad de mensajes que enviara cada host:");    
 endnetwork
 

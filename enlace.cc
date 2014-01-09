@@ -65,13 +65,17 @@ using namespace std;
 class enlace : public cSimpleModule
 {
     public:
-        int limite_de_mensajes = 2;
+        int limite_de_mensajes = 10;
         int mensajes_enviados  = 0;
         int ultimo_recibido    = 0;
         int mensajes_confirmados = 0;
         int probabilidad_de_error = 50;
+        int mensajes_enviados_totales = 0;
+        int base = 0;
+        int host;
   protected:
         vector<cMessage*> mensajes;
+        vector<cMessage*> mensajes_copia;
             virtual void initialize();
             virtual void processMsgFromHigherLayer(cMessage *dato);
             virtual void processMsgFromLowerLayer(cMessage *packet);
@@ -84,7 +88,7 @@ class enlace : public cSimpleModule
             bool LoEnvieYo(cMessage * packet, int direccion);
             bool EsToken(cMessage * msg);
             bool HayMensajes();
-            bool EnviarMensaje();
+            void EnviarMensaje();
             bool EnviarToken();
             bool EsAck(cMessage * packet);
             bool EsMensaje(cMessage * packet);
@@ -94,6 +98,7 @@ class enlace : public cSimpleModule
             int LargoInt(int value);
             const char * IntToConstChar(int numero, int largo);
             cMessage * CrearACK(int i, int origen, int destino);
+            void VerMensajes();
             bool PoseeTrama      = false;
             bool EnvieToken      = false;
             bool TengoElToken    = false;
@@ -103,9 +108,10 @@ class enlace : public cSimpleModule
 Define_Module( enlace );
 
 void enlace::initialize(){
+    host = par("direccion");
     srand(time(NULL));
     int direccion = par("direccion");
-    TengoElToken = direccion == 1 ? true : false;
+    TengoElToken = direccion == 0 ? true : false;
 }
 
 char * enlace::ObtenerMensaje(cMessage * msg, int inicio, int largo){
@@ -226,6 +232,7 @@ void enlace::processMsgFromHigherLayer(cMessage *dato)
     dato = FCS(dato, CON_ERROR);
 
     mensajes.push_back(dato);
+    mensajes_copia.push_back(dato);
 
     if(!MensajeEnCamino){
         // si llegue al limite de mensajes, envio el token
@@ -253,17 +260,11 @@ bool enlace::EnviarToken(){
     return false;
 }
 
-// Intenta enviar un mensaje, si no hay mensajes que enviar, devuelve false
-bool enlace::EnviarMensaje(){
-    /*if(mensajes.size() == 0){
-        cMessage * paquete = new cMessage("");
-        send(paquete, "hacia_arriba");
-        ev << "Enviados: " << mensajes_enviados << endl;
-            ev << "Confirmados:  "<< mensajes_confirmados << endl;
-        return false;
-    }*/
+// Intenta enviar un mensaje
+void enlace::EnviarMensaje(){
     int a = 10;
     while(mensajes.size() > 0 && !MensajeEnCamino && TengoElToken && mensajes_enviados < limite_de_mensajes){
+        base++;
         int ultimo_elemento = mensajes.size() - 1;
         cMessage * ultimo_mensaje = mensajes.at( ultimo_elemento );
         ultimo_mensaje->setKind(COLOR_MENSAJE_NO_RECIBIDO);
@@ -276,9 +277,9 @@ bool enlace::EnviarMensaje(){
         mensajes.pop_back();
         send( ultimo_mensaje ,"hacia_fisico");
         mensajes_enviados++;
-        //return true;
+        mensajes_enviados_totales++;
     }
-    return false;
+    //VerMensajes();
 }
 
 int enlace::LargoInt(int value){
@@ -336,6 +337,17 @@ bool enlace::ComprobarFcs(cMessage * packet){
     return strcmp(mensaje_sin->getFullName(), packet->getFullName()) == 0;
 }
 
+void enlace::VerMensajes(){
+    ev << "Host " << host << endl;
+    ev << "Mensajes: ( " << base << " )" << endl;
+    for(int i = 0; i < mensajes_copia.size(); i++){
+        ev << "\t" << ((cMessage*)mensajes_copia.at(i))->getFullName() << endl;
+        if( i == base - 1){
+            ev << "--------------------" << endl;
+        }
+    }
+}
+
 cMessage * enlace::CrearACK(int i, int origen, int destino){
     // Contenido del mensaje
     cMessage * ack = new cMessage((char*)IntToConstChar(i, LARGO_DATOS));
@@ -370,9 +382,9 @@ void enlace::processMsgFromLowerLayer(cMessage *packet)
         mensajes_enviados = 0;
         if(mensajes.size() > 0){
             EnviarMensaje();
-            ev << "Enviare nuevos mensajes" << endl;
+            ev << "Host " << host << ": Tengo el token, y mensajes para enviar. Por lo tanto, transmitire." << endl;
         }else{
-            ev << "No tengo mensajes, reenviare" << endl;
+            ev << "Host " << host << ": Tengo el token, pero no tengo mensajes para enviar. Por lo tanto, enviare el token." << endl;
             EnviarToken();
             //send(packet, "hacia_fisico");
         }
@@ -384,7 +396,9 @@ void enlace::processMsgFromLowerLayer(cMessage *packet)
             //packet->setKind(COLOR_MENSAJE_RECIBIDO);
             if(EsAck(packet)){
                 mensajes_confirmados++;
-                ev << "Me llego un ACK !!!" << endl;
+                ev << "Host " << host << ": Me llego un Acuse de Recibo del host " << ObtenerIntDeTrama(packet, INICIO_DIRECCION_ORIGEN, LARGO_DIRECCION_ORIGEN) << "..." << endl;
+                mensajes_copia.pop_back();
+                base--;
                 //send(packet, "hacia_fisico");
                 if(mensajes_enviados >= limite_de_mensajes || mensajes.size() == 0){
                     EnviarToken();
@@ -392,12 +406,12 @@ void enlace::processMsgFromLowerLayer(cMessage *packet)
                     EnviarMensaje();
                 }
             }else if(EsMensaje(packet)){
-                ev << "Me llego un mensaje !!!, enviare un ACK" << endl;
+                ev << "Host " << host << ": Me llego un mensaje de " << ObtenerIntDeTrama(packet, INICIO_DIRECCION_ORIGEN, LARGO_DIRECCION_ORIGEN) << ", mandare un Acuse de Recibo..." << endl;
                 ev << packet->getFullName() << endl;
                 if(ComprobarFcs(packet)){
-                    ev << "Fcs CORRECTO" << endl;
+                    ev << "FCS CORRECTO" << endl;
                 }else {
-                    ev << "Fcs MALO" << endl;
+                    ev << "FCS MALO" << endl;
                 }
                 cMessage * paquete = CrearACK(ultimo_recibido, direccion, ObtenerIntDeTrama(packet, INICIO_DIRECCION_ORIGEN, LARGO_DIRECCION_ORIGEN));
                 ultimo_recibido++;
