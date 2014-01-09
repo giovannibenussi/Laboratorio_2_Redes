@@ -70,7 +70,7 @@ cMessage * aplicacion::AnadirMensajeACMessage(cMessage * msg, char * mensaje, in
 
 const char * aplicacion::AplicacionIntToConstChar(int numero, int largo){
     stringstream ss("");
-    for(int i = 0; i < largo - LargoInt(largo); i++)
+    for(int i = 0; i < largo - LargoInt(numero); i++)
         ss << '0';
     if(numero == 0)
         ss << '0';
