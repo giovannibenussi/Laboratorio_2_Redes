@@ -32,6 +32,7 @@ void aplicacion::initialize()
 {
     int direccion = par("direccion");
     int n_mensajes = par("cantidad_de_mensajes");
+    n_mensajes = 3;
     for(int destino = 0; destino < 4; destino++){
         cantidad_de_mensajes = n_mensajes;
         if(destino != direccion){
@@ -101,9 +102,9 @@ void aplicacion::generaPalabraInfo(int direccion_de_envio)
 
     // Añadimos la direccion de envio
     ev << "Host: " << direccion << ": Enviare la palabra " << palabra->getFullName() << " a " << direccion_de_envio << endl;
-    palabra = AnadirMensajeACMessage(palabra, (char*)AplicacionIntToConstChar(direccion, 2), ANADIR_AL_INICIO);
-    palabra = AnadirMensajeACMessage(palabra, (char*)AplicacionIntToConstChar(direccion_de_envio, 2), ANADIR_AL_INICIO);
-	//ev<<"Host "<<direccion<<" - LA PALABRA QUE SE ENVIO DESDE APLICACION ES: "<<palabra->getFullName() << endl;
+    palabra = AnadirMensajeACMessage(palabra, (char*)AplicacionIntToConstChar(direccion, 1), ANADIR_AL_INICIO);
+    palabra = AnadirMensajeACMessage(palabra, (char*)AplicacionIntToConstChar(direccion_de_envio, 1), ANADIR_AL_INICIO);
+	ev<<"Host "<<direccion<<" - LA PALABRA QUE SE ENVIO DESDE APLICACION ES: "<<palabra->getFullName() << endl;
 
 	send(palabra, "hacia_abajo");//se envia la palabra hacia abajo
 }

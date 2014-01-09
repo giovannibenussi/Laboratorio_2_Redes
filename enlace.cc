@@ -24,18 +24,18 @@
 
 // Direccion de Destino
 #define INICIO_DIRECCION_DESTINO 6
-#define LARGO_DIRECCION_DESTINO  2
+#define LARGO_DIRECCION_DESTINO  1
 
 // Direccion de Origen
-#define INICIO_DIRECCION_ORIGEN  8
-#define LARGO_DIRECCION_ORIGEN   2
+#define INICIO_DIRECCION_ORIGEN  7
+#define LARGO_DIRECCION_ORIGEN   1
 
 // Datos
-#define INICIO_DATOS             10
+#define INICIO_DATOS             8
 #define LARGO_DATOS              8
 
 // FCS
-#define INICIO_FCS               18
+#define INICIO_FCS               16
 #define LARGO_FCS                3
 
 #define CONTROL_ACCESO_TOKEN "000"
@@ -65,7 +65,7 @@ using namespace std;
 class enlace : public cSimpleModule
 {
     public:
-        int limite_de_mensajes = 10;
+        int limite_de_mensajes = 2;
         int mensajes_enviados  = 0;
         int ultimo_recibido    = 0;
         int mensajes_confirmados = 0;

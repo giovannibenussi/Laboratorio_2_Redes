@@ -8,8 +8,8 @@ module sistema
 
         Host_0: host;
             parameters:
-                direccion = 0,
                 cantidad_de_mensajes = cantidad_de_mensajes,
+                direccion = 0,
                 direccion_de_envio = 1;
                 
 
