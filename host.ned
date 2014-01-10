@@ -7,6 +7,7 @@ module host
     parameters:
         cantidad_de_mensajes: numeric const,
         direccion: numeric const,
+        probabilidad_de_error: numeric const,
         direccion_de_envio: numeric const;
 
     gates:
@@ -31,6 +32,7 @@ module host
             parameters:
                 limite_de_tramas = 3,
                 direccion_de_envio = direccion_de_envio,
+                probabilidad_de_error = probabilidad_de_error,
                 direccion = direccion;
 
             display: "p=97,245;i=block/plug";

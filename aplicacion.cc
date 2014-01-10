@@ -33,6 +33,7 @@ void aplicacion::initialize()
     int direccion = par("direccion");
     int n_mensajes = par("cantidad_de_mensajes");
     n_mensajes = 3;
+    // Genera "n_mensajes" por cada host (que no sea el) para enviar
     for(int destino = 0; destino < 4; destino++){
         cantidad_de_mensajes = n_mensajes;
         if(destino != direccion){
@@ -57,6 +58,7 @@ int LargoInt(int value){
   return l;
 }
 
+// Añade el mensaje "mensaje" a "msg"
 cMessage * aplicacion::AnadirMensajeACMessage(cMessage * msg, char * mensaje, int posicion){
     const char * a_mensaje_anterior = msg->getFullName();
     int largo_total = 1 + strlen(a_mensaje_anterior) + strlen(mensaje);
@@ -72,6 +74,7 @@ cMessage * aplicacion::AnadirMensajeACMessage(cMessage * msg, char * mensaje, in
     return nuevo;
 }
 
+// Transforma un dato de tipo int a un dato de tipo const char * (de largo "largo")
 const char * aplicacion::AplicacionIntToConstChar(int numero, int largo){
     stringstream ss("");
     for(int i = 0; i < largo - LargoInt(numero); i++)
@@ -92,7 +95,7 @@ void aplicacion::generaPalabraInfo(int direccion_de_envio)
 
 	mens = (char*)malloc(sizeof(char)*tamT);
 
-	//se inicializa la palabra a enviar solo con '0'
+	//se inicializa la palabra a enviar solo con tamT 0's
 	strcpy(mens, "0");
 	for(int i=1;i<tamT;i++)
 		strcat(mens, "0");
