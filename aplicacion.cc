@@ -101,7 +101,7 @@ void aplicacion::generaPalabraInfo(int direccion_de_envio)
 
 
     // Añadimos la direccion de envio
-    ev << "Host: " << direccion << ": Enviare la palabra " << palabra->getFullName() << " a " << direccion_de_envio << endl;
+    ev << "Host:\n\t " << direccion << ": Enviare la palabra " << palabra->getFullName() << " a " << direccion_de_envio << endl;
     palabra = AnadirMensajeACMessage(palabra, (char*)AplicacionIntToConstChar(direccion, 1), ANADIR_AL_INICIO);
     palabra = AnadirMensajeACMessage(palabra, (char*)AplicacionIntToConstChar(direccion_de_envio, 1), ANADIR_AL_INICIO);
 	ev<<"Host "<<direccion<<" - LA PALABRA QUE SE ENVIO DESDE APLICACION ES: "<<palabra->getFullName() << endl;
